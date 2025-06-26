@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Playing {{ character.name }} - Thousand Year Old Vampire{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Current Prompt -->
+        <div class="prompt-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="vampire-title mb-0">
+                    Prompt {{ character.current_prompt }}{{ character.prompt_entry }}
+                </h2>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'character_detail' character.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-scroll me-1"></i>Character Sheet
+                    </a>
+                    <a href="{% url 'dice_roller' %}" class="btn btn-outline-primary" target="_blank">
+                        <i class="fas fa-dice me-1"></i>Dice Roller
+                    </a>
+                </div>
+            </div>
+            
+            <div class="prompt-text mb-4">
+                <p class="lead">{{ prompt.text|linebreaks }}</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="response" class="form-label h5">
+                        <i class="fas fa-quill-alt me-2"></i>Your Response
+                    </label>
+                    <textarea name="response" id="response" class="form-control" rows="6" 
+                              placeholder="Write your vampire's experience, choices, and actions in response to this prompt..." required></textarea>
+                    <div class="form-text">
+                        Answer in first person from your vampire's perspective. Don't feel the need to answer every question in the prompt—focus on what feels natural and meaningful.
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-dice me-2"></i>Roll Dice & Continue Story
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Quick Reference -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Quick Reference
+            </div>
+            <div class="card-body">
+                <h6>How It Works:</h6>
+                <ol class="small">
+                    <li>Read the prompt carefully</li>
+                    <li>Write your vampire's response</li>
+                    <li>Click "Roll Dice" to determine the next prompt</li>
+                    <li>Continue building your vampire's story</li>
+                </ol>
+                
+                <hr>
+                
+                <h6>Remember:</h6>
+                <ul class="small mb-0">
+                    <li>Write in first person</li>
+                    <li>Create an Experience for each prompt</li>
+                    <li>Let the story surprise you</li>
+                    <li>Embrace uncomfortable choices</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Character Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-vampire-bite me-2"></i>{{ character.name }}
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small class="text-muted">Memories</small>
+                        <div class="h6">{{ memories|length }}/5</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Skills</small>
+                        <div class="h6">{{ skills|length }}</div>
+                    </div>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small class="text-muted">Resources</small>
+                        <div class="h6">{{ resources|length }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Characters</small>
+                        <div class="h6">{{ characters|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Current Memories -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-brain me-2"></i>Current Memories
+            </div>
+            <div class="card-body">
+                {% for memory in memories %}
+                    <div class="mb-2">
+                        <strong>Memory {{ memory.order }}</strong>
+                        <small class="text-muted">({{ memory.experiences.count }}/3)</small>
+                        {% for experience in memory.experiences.all %}
+                            <div class="small text-muted">
+                                "{{ experience.text|truncatewords:15 }}"
+                            </div>
+                        {% empty %}
+                            <div class="small text-muted fst-italic">Empty</div>
+                        {% endfor %}
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Active Skills -->
+        {% if skills %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-cog me-2"></i>Skills
+            </div>
+            <div class="card-body">
+                {% for skill in skills %}
+                    <div class="small mb-1">
+                        {% if skill.is_checked %}
+                            <i class="fas fa-check-circle text-success me-1"></i>
+                        {% else %}
+                            <i class="far fa-circle text-muted me-1"></i>
+                        {% endif %}
+                        {{ skill.name }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Active Resources -->
+        {% if resources %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-treasure-chest me-2"></i>Resources
+            </div>
+            <div class="card-body">
+                {% for resource in resources %}
+                    <div class="small mb-1">
+                        <i class="fas fa-gem text-warning me-1"></i>
+                        {{ resource.name }}
+                        {% if resource.is_stationary %}
+                            <i class="fas fa-home text-info ms-1"></i>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Characters -->
+        {% if characters %}
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-users me-2"></i>Characters
+            </div>
+            <div class="card-body">
+                {% for char in characters %}
+                    <div class="small mb-1">
+                        {% if char.character_type == 'mortal' %}
+                            <i class="fas fa-user text-primary me-1"></i>
+                        {% else %}
+                            <i class="fas fa-ghost text-purple me-1"></i>
+                        {% endif %}
+                        <strong>{{ char.name }}</strong>
+                        <div class="text-muted">{{ char.description|truncatewords:8 }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Game Tips Modal (shown on first visit) -->
+<div class="modal fade" id="gameTipsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-lightbulb me-2"></i>Playing Tips
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-writing me-2"></i>Writing Your Response</h6>
+                        <ul>
+                            <li>Write in first person as your vampire</li>
+                            <li>Focus on what happened and why it matters</li>
+                            <li>Don't answer every question in the prompt</li>
+                            <li>Let the story flow naturally</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-brain me-2"></i>Managing Memories</h6>
+                        <ul>
+                            <li>Create an Experience for each prompt response</li>
+                            <li>Group related Experiences in the same Memory</li>
+                            <li>When memories are full, you'll need to forget old ones</li>
+                            <li>Use your Character Sheet to manage traits</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Remember</h6>
+                    <p class="mb-0">
+                        This is a game about difficult choices and moral compromise. 
+                        Your vampire will do terrible things. Embrace the darkness and 
+                        let the prompts guide you to unexpected places.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    Begin Playing
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Show tips modal on first visit to a character's game
+if (localStorage.getItem('tyov_tips_shown_{{ character.id }}') !== 'true') {
+    const tipsModal = new bootstrap.Modal(document.getElementById('gameTipsModal'));
+    tipsModal.show();
+    localStorage.setItem('tyov_tips_shown_{{ character.id }}', 'true');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Dice Roller - Thousand Year Old Vampire{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2><i class="fas fa-dice me-2"></i>Dice Roller</h2>
+                <p class="mb-0 text-muted">Roll d10 - d6 to determine your next prompt</p>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <button id="rollDice" class="btn btn-primary btn-lg">
+                        <i class="fas fa-dice me-2"></i>Roll Dice
+                    </button>
+                </div>
+                
+                <div id="diceResults" class="text-center" style="display: none;">
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body py-3">
+                                    <h3 id="d10Result" class="dice-result mb-1">-</h3>
+                                    <small class="text-muted">d10</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4 d-flex align-items-center justify-content-center">
+                            <h2 class="dice-result">-</h2>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body py-3">
+                                    <h3 id="d6Result" class="dice-result mb-1">-</h3>
+                                    <small class="text-muted">d6</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h2 class="dice-result">
+                            Result: <span id="finalResult">0</span>
+                        </h2>
+                        <div id="movementText" class="text-muted"></div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-4">
+                    <h6><i class="fas fa-info-circle me-2"></i>How to Use</h6>
+                    <ul class="mb-0">
+                        <li><strong>Positive result:</strong> Move forward that many prompts</li>
+                        <li><strong>Negative result:</strong> Move backward that many prompts</li>
+                        <li><strong>Zero result:</strong> Stay on the same prompt (use next entry: a→b→c)</li>
+                        <li><strong>Can't go below Prompt 1:</strong> If you would go below 1, encounter Prompt 1 again</li>
+                    </ul>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        <small>
+                            <i class="fas fa-question-circle me-1"></i>
+                            Need help? The dice determine which prompt you encounter next in your vampire's story.
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('rollDice').addEventListener('click', function() {
+    // Add rolling animation
+    this.innerHTML = '<i class="fas fa-dice me-2"></i>Rolling...';
+    this.disabled = true;
+    
+    fetch('/dice/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Show results with animation
+        document.getElementById('d10Result').textContent = data.d10;
+        document.getElementById('d6Result').textContent = data.d6;
+        document.getElementById('finalResult').textContent = data.result;
+        
+        // Update movement text
+        const movementText = document.getElementById('movementText');
+        if (data.result > 0) {
+            movementText.textContent = `Move forward ${data.result} prompt(s)`;
+            movementText.className = 'text-success';
+        } else if (data.result < 0) {
+            movementText.textContent = `Move backward ${Math.abs(data.result)} prompt(s)`;
+            movementText.className = 'text-warning';
+        } else {
+            movementText.textContent = 'Stay on the same prompt (use next entry)';
+            movementText.className = 'text-info';
+        }
+        
+        // Show results
+        document.getElementById('diceResults').style.display = 'block';
+        
+        // Reset button
+        this.innerHTML = '<i class="fas fa-dice me-2"></i>Roll Again';
+        this.disabled = false;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        this.innerHTML = '<i class="fas fa-dice me-2"></i>Roll Dice';
+        this.disabled = false;
+        alert('Failed to roll dice. Please try again.');
+    });
+});
+
+// Add CSRF token for AJAX requests
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+if (!csrfToken) {
+    // Create a hidden form with CSRF token for AJAX requests
+    const form = document.createElement('form');
+    form.style.display = 'none';
+    form.innerHTML = '{% csrf_token %}';
+    document.body.appendChild(form);
+}
+</script>
+{% endblock %}

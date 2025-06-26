@@ -1,0 +1,79 @@
+<!-- Add Resource Modal -->
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Resource
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addResourceForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="resourceName" class="form-label">Resource Name</label>
+                        <input type="text" class="form-control" id="resourceName" name="name" 
+                               placeholder="e.g., Knightly equipage, Castle Umbrecht" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="resourceDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="resourceDescription" name="description" rows="2" 
+                                  placeholder="Brief description of this resource..."></textarea>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isStationary" name="is_stationary">
+                        <label class="form-check-label" for="isStationary">
+                            Stationary Resource
+                        </label>
+                        <div class="form-text">
+                            Check if this resource cannot be physically moved (e.g., castle, cave, business)
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-info-circle me-2"></i>Resource Examples</h6>
+                        <ul class="mb-0">
+                            <li>A loyal impi</li>
+                            <li>Diamond tiara</li>
+                            <li>The Castle Umbrecht (stationary)</li>
+                            <li>A business empire</li>
+                            <li>Lucky penny</li>
+                            <li>Roman legion</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Resource</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addResourceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch(`/characters/{{ character.id }}/add-resource/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to add resource');
+        }
+    });
+});
+</script>

@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+
+{% block title %}Setup {{ character.name }} - Thousand Year Old Vampire{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Progress Indicator -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="vampire-title text-center mb-3">
+                    <i class="fas fa-vampire-bite me-2"></i>Setting Up {{ character.name }}
+                </h2>
+                
+                <div class="progress mb-3">
+                    {% if step == '1' %}
+                        <div class="progress-bar bg-danger" style="width: 25%">
+                    {% elif step == '2' %}
+                        <div class="progress-bar bg-danger" style="width: 50%">
+                    {% elif step == '3' %}
+                        <div class="progress-bar bg-danger" style="width: 75%">
+                    {% elif step == '4' %}
+                        <div class="progress-bar bg-danger" style="width: 100%">
+                    {% else %}
+                        <div class="progress-bar bg-danger" style="width: 25%">
+                    {% endif %}
+                        Step {{ step }} of 4
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="{% if step == '1' or step == '2' or step == '3' or step == '4' %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-users fa-2x"></i>
+                            <div>Mortals</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="{% if step == '2' or step == '3' or step == '4' %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-tools fa-2x"></i>
+                            <div>Skills & Resources</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="{% if step == '3' or step == '4' %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-brain fa-2x"></i>
+                            <div>Experiences</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="{% if step == '4' %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-skull fa-2x"></i>
+                            <div>Transformation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if step == '1' %}
+            <!-- Step 1: Create Mortals -->
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-users me-2"></i>Step 1: Create Three Mortal Characters</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Creating Mortal Relationships</h6>
+                        <p class="mb-0">
+                            Create at least three mortals who have relationships with your vampire—relatives, 
+                            friends and lovers, enemies, mentors, debtors, or anything else appropriate for 
+                            their time and place. These characters will be very important but won't be around for long.
+                        </p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% for i in "123" %}
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6>Mortal Character {{ forloop.counter }}</h6>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" 
+                                           name="mortal_{{ forloop.counter0 }}_name" 
+                                           placeholder="e.g., Gundar, Marie, Brother Thomas" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Relationship</label>
+                                    <select class="form-select" name="mortal_{{ forloop.counter0 }}_relationship">
+                                        <option value="family">Family</option>
+                                        <option value="friend">Friend</option>
+                                        <option value="lover">Lover</option>
+                                        <option value="enemy">Enemy</option>
+                                        <option value="servant">Servant</option>
+                                        <option value="master">Master/Mentor</option>
+                                        <option value="neutral">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Description</label>
+                                    <input type="text" class="form-control" 
+                                           name="mortal_{{ forloop.counter0 }}_description" 
+                                           placeholder="e.g., a Viking jarl, like a father to me" required>
+                                </div>
+                            </div>
+                            {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>Continue to Skills & Resources
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        
+        {% elif step == '2' %}
+            <!-- Step 2: Skills and Resources -->
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-tools me-2"></i>Step 2: Skills and Resources from Mortal Life</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Mortal Capabilities</h6>
+                        <p class="mb-0">
+                            Give your vampire-to-be three Skills fitting for their mortal life, and three Resources 
+                            they obtained while still human. Resources can be anything from an obsidian knife 
+                            to a fleet of warships.
+                        </p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-cog me-2"></i>Three Skills</h5>
+                                {% for i in "123" %}
+                                    <div class="mb-3">
+                                        <label class="form-label">Skill {{ forloop.counter }}</label>
+                                        <input type="text" class="form-control mb-2" 
+                                               name="skill_{{ forloop.counter0 }}" 
+                                               placeholder="e.g., Swordplay, Courtly Manners, Animal Husbandry" required>
+                                        <textarea class="form-control" 
+                                                  name="skill_{{ forloop.counter0 }}_description" 
+                                                  rows="2" 
+                                                  placeholder="Optional description of what this skill does or how it's used"></textarea>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-gem me-2"></i>Three Resources</h5>
+                                {% for i in "123" %}
+                                    <div class="mb-3">
+                                        <label class="form-label">Resource {{ forloop.counter }}</label>
+                                        <input type="text" class="form-control" 
+                                               name="resource_{{ forloop.counter0 }}_name" 
+                                               placeholder="e.g., Knightly equipage, Family castle" required>
+                                        <input type="text" class="form-control mt-1" 
+                                               name="resource_{{ forloop.counter0 }}_description" 
+                                               placeholder="Brief description (optional)">
+                                        <div class="form-check mt-1">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="resource_{{ forloop.counter0 }}_stationary">
+                                            <label class="form-check-label">Stationary (cannot be moved)</label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>Continue to Experiences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        
+        {% elif step == '3' %}
+            <!-- Step 3: Additional Experiences -->
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-brain me-2"></i>Step 3: Three Experiences Combining Traits</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Connecting Your Traits</h6>
+                        <p class="mb-0">
+                            Create three more Experiences, each combining two of your vampire's traits 
+                            (Skills, Resources, or Characters). For example: "Gundar takes me on my first voyage 
+                            aboard the Longship Bøkesuden; his touch calms me when we first leave sight of land."
+                        </p>
+                    </div>
+                    
+                    <!-- Show current traits for reference -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <h6>Your Characters:</h6>
+                            <ul class="small">
+                                {% for char in character.characters.all %}
+                                    <li>{{ char.name }} - {{ char.description }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Your Skills:</h6>
+                            <ul class="small">
+                                {% for skill in character.skills.all %}
+                                    <li>{{ skill.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Your Resources:</h6>
+                            <ul class="small">
+                                {% for resource in character.resources.all %}
+                                    <li>{{ resource.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% for i in "123" %}
+                            <div class="mb-4">
+                                <label class="form-label">Experience {{ forloop.counter }} (for Memory {{ forloop.counter|add:1 }})</label>
+                                <textarea class="form-control" name="experience_{{ forloop.counter0 }}" rows="3" 
+                                          placeholder="Write an experience that combines two of your traits..." required></textarea>
+                                <div class="form-text">
+                                    Combine a Character with a Resource, a Skill with a Character, etc.
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>Continue to Transformation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        
+        {% elif step == '4' %}
+            <!-- Step 4: Transformation -->
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-skull me-2"></i>Step 4: The Dark Transformation</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Becoming Undead</h6>
+                        <p class="mb-0">
+                            Create the Immortal who gifted (or cursed) your character with unlife. 
+                            Create a Mark that shows their vampiric nature, and describe the transformation experience.
+                        </p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-ghost me-2"></i>The Immortal Creator</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" name="immortal_name" 
+                                           placeholder="e.g., Baron Hollmueller" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="immortal_description" rows="2" 
+                                              placeholder="e.g., an Austrian noble and vampire; he stole the deed to my land" required></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-eye me-2"></i>Your Vampiric Mark</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Mark Description</label>
+                                    <textarea class="form-control" name="mark_description" rows="2" 
+                                              placeholder="e.g., My neck is permanently broken" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">How Concealed</label>
+                                    <input type="text" class="form-control" name="mark_concealed" 
+                                           placeholder="e.g., I wear tight scarves and walk slowly to maintain dignity">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6><i class="fas fa-skull-crossbones me-2"></i>The Transformation Experience</h6>
+                            <textarea class="form-control" name="transformation_experience" rows="4" 
+                                      placeholder="Describe how you became a vampire..." required></textarea>
+                            <div class="form-text">
+                                Example: "I duel the eerie Baron Hollmueller across the roof of the abbey; 
+                                he nearly cuts my head from my shoulders but I do not die."
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-check-circle me-2"></i>Character Complete</h6>
+                            <p class="mb-0">
+                                Once complete, your vampire will have: 3 Skills, 3 Resources, 1 Mark, 
+                                3+ Mortals, 1 Immortal, and 1 Experience in each of their 5 Memories.
+                            </p>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-vampire-bite me-2"></i>Complete Character & Begin Chronicle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add some helpful interactivity
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-resize textareas
+    document.querySelectorAll('textarea').forEach(function(textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    });
+});
+</script>
+{% endblock %}

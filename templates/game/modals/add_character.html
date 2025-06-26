@@ -1,0 +1,95 @@
+<!-- Add Character Modal -->
+<div class="modal fade" id="addCharacterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Character
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCharacterForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="characterName" class="form-label">Character Name</label>
+                        <input type="text" class="form-control" id="characterName" name="name" 
+                               placeholder="e.g., Lawrence Hollmueller, Sister Adelpho" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="characterDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="characterDescription" name="description" rows="2" 
+                                  placeholder="Brief description of this character..." required></textarea>
+                        <div class="form-text">
+                            Include their role, relationship to you, or other distinguishing features.
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="characterType" class="form-label">Type</label>
+                            <select class="form-select" id="characterType" name="character_type" required>
+                                <option value="mortal">Mortal</option>
+                                <option value="immortal">Immortal</option>
+                            </select>
+                            <div class="form-text">
+                                Mortals age and die, immortals are supernatural beings.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="characterRelationship" class="form-label">Relationship</label>
+                            <select class="form-select" id="characterRelationship" name="relationship">
+                                <option value="neutral">Neutral</option>
+                                <option value="friend">Friend</option>
+                                <option value="enemy">Enemy</option>
+                                <option value="lover">Lover</option>
+                                <option value="family">Family</option>
+                                <option value="servant">Servant</option>
+                                <option value="master">Master</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Character Examples</h6>
+                        <ul class="mb-0">
+                            <li><strong>Lawrence Hollmueller</strong> - a descendant of Baron Hollmueller</li>
+                            <li><strong>Sister Adelpho</strong> - a meddlesome nun</li>
+                            <li><strong>Gundar</strong> - a Viking jarl, like a father to me</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Character</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addCharacterForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch(`/characters/{{ character.id }}/add-character/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to add character');
+        }
+    });
+});
+</script>

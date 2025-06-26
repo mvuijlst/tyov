@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ character.name }} - Character Sheet{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="vampire-title mb-1">
+            <i class="fas fa-vampire-bite me-2"></i>{{ character.name }}
+        </h1>
+        <p class="text-muted mb-0">
+            Current Position: Prompt {{ character.current_prompt }}{{ character.prompt_entry }}
+            {% if character.game_ended %}
+                <span class="badge bg-secondary ms-2">Story Ended</span>
+            {% endif %}
+        </p>
+    </div>
+    <div>
+        <a href="{% url 'character_list' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i>Back to List
+        </a>
+        {% if character.skills.count < 3 or character.resources.count < 3 %}
+            <a href="{% url 'setup_character' character.id %}" class="btn btn-warning me-2">
+                <i class="fas fa-cog me-1"></i>Complete Setup
+            </a>
+        {% endif %}
+        {% if not character.game_ended %}
+            <a href="{% url 'play_game' character.id %}" class="btn btn-primary">
+                <i class="fas fa-play me-1"></i>Continue Story
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Origin Story -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-scroll me-2"></i>Origin
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ character.origin_description }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Memories -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-brain me-2"></i>Memories ({{ memories|length }}/5)</span>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addExperienceModal">
+                    <i class="fas fa-plus me-1"></i>Add Experience
+                </button>
+            </div>
+            <div class="card-body">
+                {% for memory in memories %}
+                    <div class="memory-slot">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Memory {{ memory.order }}</h6>
+                            <small class="text-muted">
+                                {{ memory.experiences.count }}/3 experiences
+                                {% if memory.is_in_diary %}
+                                    <i class="fas fa-book text-warning ms-1" title="In Diary"></i>
+                                {% endif %}
+                                {% if memory.is_lost %}
+                                    <i class="fas fa-times text-danger ms-1" title="Lost"></i>
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        {% for experience in memory.experiences.all %}
+                            <div class="experience">
+                                "{{ experience.text }}"
+                            </div>
+                        {% empty %}
+                            <div class="text-muted fst-italic">No experiences yet...</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addSkillModal">
+                        <i class="fas fa-plus me-1"></i>Add Skill
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                        <i class="fas fa-plus me-1"></i>Add Resource
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCharacterModal">
+                        <i class="fas fa-plus me-1"></i>Add Character
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMarkModal">
+                        <i class="fas fa-plus me-1"></i>Add Mark
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Skills -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-cog me-2"></i>Skills ({{ skills|length }})
+            </div>
+            <div class="card-body">
+                {% for skill in skills %}
+                    <div class="trait-item {% if skill.is_checked %}trait-checked{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center">
+                                    {% if skill.is_checked %}
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                    {% else %}
+                                        <i class="far fa-circle text-muted me-2"></i>
+                                    {% endif %}
+                                    <strong>{{ skill.name }}</strong>
+                                </div>
+                                {% if skill.description %}
+                                    <div class="text-muted small mt-1 ms-4">
+                                        {{ skill.description }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% if not skill.is_checked %}
+                                <button class="btn btn-sm btn-outline-success ms-2" onclick="toggleSkill({{ skill.id }})">
+                                    Check
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-muted fst-italic">No skills yet...</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resources -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-treasure-chest me-2"></i>Resources ({{ resources|length }})
+            </div>
+            <div class="card-body">
+                {% for resource in resources %}
+                    <div class="trait-item">
+                        <span>
+                            <i class="fas fa-gem text-warning me-2"></i>
+                            {{ resource.name }}
+                            {% if resource.is_stationary %}
+                                <i class="fas fa-home text-info ms-1" title="Stationary"></i>
+                            {% endif %}
+                        </span>
+                    </div>
+                {% empty %}
+                    <div class="text-muted fst-italic">No resources yet...</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Characters -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-users me-2"></i>Characters ({{ characters|length }})
+            </div>
+            <div class="card-body">
+                {% for char in characters %}
+                    <div class="trait-item">
+                        <span>
+                            {% if char.character_type == 'mortal' %}
+                                <i class="fas fa-user text-primary me-2"></i>
+                            {% else %}
+                                <i class="fas fa-ghost text-purple me-2"></i>
+                            {% endif %}
+                            <strong>{{ char.name }}</strong> ({{ char.get_relationship_display }})
+                            <br>
+                            <small class="text-muted">{{ char.description }}</small>
+                        </span>
+                    </div>
+                {% empty %}
+                    <div class="text-muted fst-italic">No characters yet...</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Marks -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-eye me-2"></i>Marks ({{ marks|length }})
+            </div>
+            <div class="card-body">
+                {% for mark in marks %}
+                    <div class="trait-item">
+                        <span>
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            {{ mark.description }}
+                            {% if mark.how_concealed %}
+                                <br>
+                                <small class="text-muted">Concealed: {{ mark.how_concealed }}</small>
+                            {% endif %}
+                        </span>
+                    </div>
+                {% empty %}
+                    <div class="text-muted fst-italic">No marks yet...</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sessions -->
+{% if recent_sessions %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>Recent Sessions
+            </div>
+            <div class="card-body">
+                {% for session in recent_sessions %}
+                    <div class="border-bottom mb-3 pb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="mb-1">Prompt {{ session.prompt_number }}{{ session.prompt_entry }}</h6>
+                            <small class="text-muted">{{ session.created_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1">{{ session.response|truncatewords:30 }}</p>
+                        {% if session.dice_roll_d10 %}
+                            <small class="text-muted">
+                                Rolled: {{ session.dice_roll_d10 }} - {{ session.dice_roll_d6 }} = 
+                                {{ session.dice_roll_d10|add:session.dice_roll_d6|add:"-"|add:session.dice_roll_d6|add:session.dice_roll_d6 }}
+                                → Prompt {{ session.next_prompt }}
+                            </small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modals -->
+{% include 'game/modals/add_experience.html' %}
+{% include 'game/modals/add_skill.html' %}
+{% include 'game/modals/add_resource.html' %}
+{% include 'game/modals/add_character.html' %}
+{% include 'game/modals/add_mark.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSkill(skillId) {
+    fetch(`/characters/{{ character.id }}/skills/${skillId}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to toggle skill');
+        }
+    });
+}
+</script>
+{% endblock %}

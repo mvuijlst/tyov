@@ -1,0 +1,69 @@
+<!-- Add Experience Modal -->
+<div class="modal fade" id="addExperienceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Experience
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addExperienceForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="experienceMemory" class="form-label">Memory Slot</label>
+                        <select class="form-select" id="experienceMemory" name="memory_id" required>
+                            <option value="">Choose a memory slot...</option>
+                            {% for memory in memories %}
+                                <option value="{{ memory.id }}" 
+                                        {% if memory.experiences.count >= 3 %}disabled{% endif %}>
+                                    Memory {{ memory.order }} 
+                                    ({{ memory.experiences.count }}/3 experiences)
+                                    {% if memory.experiences.count >= 3 %} - FULL{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="experienceText" class="form-label">Experience</label>
+                        <textarea class="form-control" id="experienceText" name="text" rows="3" 
+                                  placeholder="Describe this experience in a single evocative sentence..." required></textarea>
+                        <div class="form-text">
+                            Write in first person from your vampire's point of view. 
+                            Include what happened and why it matters to them.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Experience</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addExperienceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch(`/characters/{{ character.id }}/add-experience/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to add experience');
+        }
+    });
+});
+</script>

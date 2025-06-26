@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}My Characters - Thousand Year Old Vampire{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="vampire-title">
+        <i class="fas fa-scroll me-2"></i>My Vampire Chronicles
+    </h1>
+    <a href="{% url 'create_character' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Create New Vampire
+    </a>
+</div>
+
+{% if characters %}
+    <div class="row">
+        {% for character in characters %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-vampire-bite me-2"></i>{{ character.name }}
+                        </h5>
+                        {% if character.game_ended %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-skull me-1"></i>Story Ended
+                            </span>
+                        {% elif character.skills.count < 3 or character.resources.count < 3 %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-cog me-1"></i>Setup Needed
+                            </span>
+                        {% else %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-heart-pulse me-1"></i>Active
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ character.origin_description|truncatewords:20 }}</p>
+                        
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <small class="text-muted">Memories</small>
+                                <div class="h5 text-primary">{{ character.memories.count }}/5</div>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Skills</small>
+                                <div class="h5 text-success">{{ character.skills.count }}</div>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Prompt</small>
+                                <div class="h5 text-warning">{{ character.current_prompt }}{{ character.prompt_entry }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'character_detail' character.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-eye me-2"></i>View Character
+                            </a>
+                            {% if character.skills.count < 3 or character.resources.count < 3 %}
+                                <a href="{% url 'setup_character' character.id %}" class="btn btn-warning">
+                                    <i class="fas fa-cog me-2"></i>Complete Setup
+                                </a>
+                            {% elif not character.game_ended %}
+                                <a href="{% url 'play_game' character.id %}" class="btn btn-primary">
+                                    <i class="fas fa-play me-2"></i>Continue Story
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted">
+                        <small>
+                            <i class="fas fa-clock me-1"></i>
+                            Created {{ character.created_at|date:"M d, Y" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center">
+        <div class="card">
+            <div class="card-body py-5">
+                <i class="fas fa-vampire-bite fa-4x text-muted mb-3"></i>
+                <h3 class="card-title">No Chronicles Yet</h3>
+                <p class="card-text">
+                    You haven't created any vampire characters yet. 
+                    Begin your dark journey by creating your first vampire.
+                </p>
+                <a href="{% url 'create_character' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Create Your First Vampire
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

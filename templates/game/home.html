@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Thousand Year Old Vampire{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="text-center mb-5">
+            <h1 class="vampire-title display-3 mb-3">
+                <i class="fas fa-vampire-bite me-3"></i>
+                Thousand Year Old Vampire
+            </h1>
+            <p class="lead text-light">
+                A lonely solo role-playing game chronicling the unlife of a vampire 
+                over the many centuries of their existence.
+            </p>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Welcome to the Digital Chronicle</h2>
+                <p class="card-text">
+                    This digital companion helps you play Tim Hutchings' acclaimed solo RPG, 
+                    "Thousand Year Old Vampire." Chronicle your vampire's journey through the centuries, 
+                    manage their memories, skills, and relationships, and watch their story unfold 
+                    through the game's evocative prompt system.
+                </p>
+                
+                {% if user.is_authenticated %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{% url 'character_list' %}" class="btn btn-primary btn-lg me-md-2">
+                            <i class="fas fa-scroll me-2"></i>View My Characters
+                        </a>
+                        <a href="{% url 'create_character' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-plus me-2"></i>Create New Vampire
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-md-2">
+                            <i class="fas fa-user-plus me-2"></i>Start Your Chronicle
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="fas fa-brain me-2"></i>Memory Management
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Track your vampire's five precious memories, each containing up to three experiences. 
+                            Watch as old memories fade and new ones take their place through the inexorable passage of time.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="fas fa-dice me-2"></i>Prompt System
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Navigate through the game's interconnected prompts using dice rolls. 
+                            Each prompt presents challenges, opportunities, and narrative branches 
+                            that shape your vampire's story.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="fas fa-users me-2"></i>Character Tracking
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Manage relationships with mortals and immortals alike. 
+                            Watch loved ones age and die while your vampire endures, 
+                            forming new bonds across the centuries.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="fas fa-tools me-2"></i>Skills & Resources
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Develop skills and acquire resources throughout your vampire's existence. 
+                            Use them strategically as the game presents choices and challenges, 
+                            but beware—everything can be lost.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header text-center">
+                <i class="fas fa-exclamation-triangle me-2"></i>Content Warning
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <strong>This is a mature game for adults.</strong> Playing Thousand Year Old Vampire 
+                    involves themes of death, predation, and moral compromise. Your character will make 
+                    difficult choices and potentially harm others. Please play responsibly and be mindful 
+                    of your emotional well-being.
+                </p>
+                <p class="card-text mb-0">
+                    The digital version faithfully recreates the original game experience while providing 
+                    convenient tools for managing your vampire's chronicle.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

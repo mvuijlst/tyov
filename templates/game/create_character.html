@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Character - Thousand Year Old Vampire{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2><i class="fas fa-vampire-bite me-2"></i>Create Your Vampire</h2>
+                <p class="mb-0 text-muted">Begin the chronicle of your immortal existence</p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Vampire Creation Process</h6>
+                    <p class="mb-2">
+                        <strong>Step 1:</strong> Start by imagining a person in the distant past—a Roman emperor, 
+                        a Mesopotamian midwife, a French knight. This person will become your vampire.
+                    </p>
+                    <p class="mb-2">
+                        <strong>Your First Memory:</strong> Create one Experience that encapsulates their mortal history, 
+                        like: <em>"I am Henri, son of Jon, born near the Loire Valley in the 13th Century of Our Lord; 
+                        I am a poor knight swindled out of my inheritance."</em>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Next Steps:</strong> After creating your vampire, you'll set up their mortal 
+                        relationships, skills, resources, and describe their dark transformation.
+                    </p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="id_name" class="form-label h5">
+                            <i class="fas fa-signature me-2"></i>Vampire's Name
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger">{{ form.name.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">What do they call themselves in the night?</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_origin_description" class="form-label h5">
+                            <i class="fas fa-scroll me-2"></i>Mortal Origin (First Memory)
+                        </label>
+                        {{ form.origin_description }}
+                        {% if form.origin_description.errors %}
+                            <div class="text-danger">{{ form.origin_description.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            <strong>This will be your first Experience in Memory 1.</strong> Write a broad summary 
+                            of their mortal life: when and where they were born, who they were, their circumstances. 
+                            Include their time period, location, social status, and key life details.
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6><i class="fas fa-lightbulb me-2"></i>Examples of Good Origin Experiences</h6>
+                            <ul class="mb-0 small">
+                                <li><em>"I am Henri, son of Jon, born near the Loire Valley in the 13th Century of Our Lord; I am a poor knight swindled out of my inheritance."</em></li>
+                                <li><em>"I am Livia, daughter of Senator Marcus, born in Rome during Augustus's reign; I was trained as a priestess of Vesta before scandal destroyed my family."</em></li>
+                                <li><em>"I am Kemal, son of a Turkish merchant, born in Constantinople in 1453; I witnessed the fall of the city and lost everything to war."</em></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-list-check me-2"></i>Character Setup Process</h6>
+                        <p class="mb-1">After creation, you'll complete these steps:</p>
+                        <ol class="mb-0">
+                            <li><strong>Create 3 Mortal Characters</strong> - relationships from their mortal life</li>
+                            <li><strong>Add 3 Skills & 3 Resources</strong> - abilities and possessions from mortal life</li>
+                            <li><strong>Write 3 More Experiences</strong> - combining your traits in Memories 2, 3, and 4</li>
+                            <li><strong>Create the Transformation</strong> - the Immortal who made them, their Mark, and final Experience</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'character_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Setup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

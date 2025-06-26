@@ -1,0 +1,73 @@
+<!-- Add Mark Modal -->
+<div class="modal fade" id="addMarkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Mark
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addMarkForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="markDescription" class="form-label">Mark Description</label>
+                        <textarea class="form-control" id="markDescription" name="description" rows="2" 
+                                  placeholder="Describe the mark..." required></textarea>
+                        <div class="form-text">
+                            A visible indication of your vampire's undying state or supernatural nature.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="markConcealment" class="form-label">How Concealed (Optional)</label>
+                        <textarea class="form-control" id="markConcealment" name="how_concealed" rows="2" 
+                                  placeholder="How do you hide this mark?"></textarea>
+                        <div class="form-text">
+                            Describe how your vampire conceals or disguises this mark from mortals.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Mark Examples</h6>
+                        <ul class="mb-0">
+                            <li><strong>Ever-bleeding wound on the throat</strong> - covered with high collars</li>
+                            <li><strong>Eyes that are blank and white</strong> - hidden with smoked glasses</li>
+                            <li><strong>A trailing specter</strong> - only visible under moonlight</li>
+                            <li><strong>Backward claws for hands</strong> - concealed with long sleeves</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Mark</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addMarkForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch(`/characters/{{ character.id }}/add-mark/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to add mark');
+        }
+    });
+});
+</script>
