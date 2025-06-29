@@ -129,48 +129,94 @@ def play_game(request, character_id):
         messages.error(request, 'Prompt not found. The game may not be fully loaded.')
         return redirect('character_detail', character_id=character.id)
     
-    if request.method == 'POST':
-        response = request.POST.get('response', '')
-        
+    # Handle returning from action selection
+    if request.GET.get('actions_completed'):
+        response = request.session.get('pending_response', '')
         if response.strip():
-            # Roll dice for next prompt
-            d10 = random.randint(1, 10)
-            d6 = random.randint(1, 6)
-            movement = d10 - d6
-            
-            next_prompt_num = character.current_prompt + movement
-            next_prompt_num = max(1, next_prompt_num)  # Can't go below prompt 1
-            
-            # Save session
-            session = GameSession.objects.create(
-                character=character,
-                prompt_number=character.current_prompt,
-                prompt_entry=character.prompt_entry,
-                response=response,
-                dice_roll_d10=d10,
-                dice_roll_d6=d6,
-                next_prompt=next_prompt_num
-            )
-            
-            # Update character's current prompt
-            character.current_prompt = next_prompt_num
-            character.prompt_entry = 'a'  # Always start with 'a' when moving to new prompt
-            
-            # Check if we've been to this prompt before
-            previous_sessions = GameSession.objects.filter(
-                character=character,
-                prompt_number=next_prompt_num
-            ).count()
-            
-            if previous_sessions == 1:
-                character.prompt_entry = 'b'
-            elif previous_sessions >= 2:
-                character.prompt_entry = 'c'
-                
-            character.save()
-            
-            messages.success(request, f'Rolled {d10} - {d6} = {movement}. Moving to prompt {next_prompt_num}.')
+            # Process completed actions and continue with dice rolling
+            pass  # Logic will continue below
+        else:
+            messages.error(request, 'Session expired. Please submit your response again.')
             return redirect('play_game', character_id=character.id)
+    elif request.method == 'POST':
+        response = request.POST.get('response', '')
+    else:
+        response = ''
+    
+    if response.strip():
+        
+        # Create an experience for this prompt response
+        # Find an available memory slot or create new memory if needed
+        available_memory = None
+        for memory in character.memories.filter(is_lost=False).order_by('order'):
+            if memory.experiences.count() < 3:
+                available_memory = memory
+                break
+        
+        if not available_memory:
+            # Need to create a new memory, which means losing an old one
+            oldest_memory = character.memories.filter(is_lost=False).order_by('order').first()
+            if oldest_memory:
+                oldest_memory.is_lost = True
+                oldest_memory.save()
+                messages.info(request, f"Lost memory: {oldest_memory.title or 'Untitled'}")
+            
+            # Reuse the memory slot
+            available_memory = oldest_memory
+            available_memory.is_lost = False
+            available_memory.title = f"Prompt {character.current_prompt}{character.prompt_entry}"
+            available_memory.save()
+            
+            # Clear old experiences
+            available_memory.experiences.all().delete()
+        
+        # Add the new experience
+        experience_order = available_memory.experiences.count() + 1
+        Experience.objects.create(
+            memory=available_memory,
+            text=response,
+            order=experience_order
+        )
+        
+        # Roll dice for next prompt
+        d10 = random.randint(1, 10)
+        d6 = random.randint(1, 6)
+        movement = d10 - d6
+        
+        next_prompt_num = character.current_prompt + movement
+        next_prompt_num = max(1, next_prompt_num)  # Can't go below prompt 1
+        
+        # Save session
+        session = GameSession.objects.create(
+            character=character,
+            prompt_number=character.current_prompt,
+            prompt_entry=character.prompt_entry,
+            response=response,
+            dice_roll_d10=d10,
+            dice_roll_d6=d6,
+            next_prompt=next_prompt_num
+        )
+        
+        # Update character's current prompt
+        character.current_prompt = next_prompt_num
+        character.prompt_entry = 'a'  # Always start with 'a' when moving to new prompt
+        
+        # Check if we've been to this prompt before
+        previous_sessions = GameSession.objects.filter(
+            character=character,
+            prompt_number=next_prompt_num
+        ).count()
+        
+        if previous_sessions == 1:
+            character.prompt_entry = 'b'
+        elif previous_sessions >= 2:
+            character.prompt_entry = 'c'
+            
+        character.save()
+        
+        # Create success message
+        messages.success(request, f'Rolled {d10} - {d6} = {movement}. Moving to prompt {next_prompt_num}.')
+        return redirect('play_game', character_id=character.id)
     
     context = {
         'character': character,
@@ -525,3 +571,6 @@ def handle_setup_step_4(request, character):
     
     messages.success(request, 'Character setup complete! Your vampire is ready to begin their dark chronicle.')
     return redirect('character_detail', character_id=character.id)
+
+
+

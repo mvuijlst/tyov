@@ -2,6 +2,56 @@
 
 {% block title %}Playing {{ character.name }} - Thousand Year Old Vampire{% endblock %}
 
+{% block extra_css %}
+<style>
+    .prompt-text {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        padding: 0;
+        border: 1px solid #ddd;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .prompt-content {
+        color: #000000 !important;
+        font-size: 1.1rem;
+        line-height: 1.7;
+        font-weight: 600;
+        text-shadow: none;
+        padding: 25px;
+        margin: 0;
+        border-left: 4px solid var(--blood-red);
+        background: #ffffff !important;
+        min-height: 120px;
+        border: 2px solid #333;
+        display: block;
+    }
+    
+    /* Ensure the prompt text is always visible */
+    .prompt-content,
+    .prompt-content * {
+        color: #000000 !important;
+        background: transparent !important;
+    }
+    
+    /* Remove the problematic overlay */
+    .prompt-card {
+        position: static;
+    }
+    
+    /* Character management styles */
+    .btn-xs {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+    
+    .card-body .small {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-lg-8">
@@ -22,7 +72,7 @@
             </div>
             
             <div class="prompt-text mb-4">
-                <p class="lead">{{ prompt.text|linebreaks }}</p>
+                <div class="lead prompt-content">{{ prompt.text|linebreaksbr }}</div>
             </div>
             
             <form method="post">
@@ -58,6 +108,7 @@
                 <ol class="small">
                     <li>Read the prompt carefully</li>
                     <li>Write your vampire's response</li>
+                    <li>Use the character sheet tools to manually update your vampire</li>
                     <li>Click "Roll Dice" to determine the next prompt</li>
                     <li>Continue building your vampire's story</li>
                 </ol>
@@ -105,17 +156,23 @@
         
         <!-- Current Memories -->
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-brain me-2"></i>Current Memories
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-brain me-2"></i>Current Memories</span>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addExperienceModal">
+                    <i class="fas fa-plus"></i> Add Experience
+                </button>
             </div>
             <div class="card-body">
                 {% for memory in memories %}
                     <div class="mb-2">
                         <strong>Memory {{ memory.order }}</strong>
                         <small class="text-muted">({{ memory.experiences.count }}/3)</small>
+                        {% if memory.title %}
+                            <div class="small text-primary">{{ memory.title }}</div>
+                        {% endif %}
                         {% for experience in memory.experiences.all %}
-                            <div class="small text-muted">
-                                "{{ experience.text|truncatewords:15 }}"
+                            <div class="small text-muted mb-1">
+                                {{ forloop.counter }}. "{{ experience.text|truncatewords:15 }}"
                             </div>
                         {% empty %}
                             <div class="small text-muted fst-italic">Empty</div>
@@ -127,67 +184,309 @@
         </div>
         
         <!-- Active Skills -->
-        {% if skills %}
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-cog me-2"></i>Skills
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-cog me-2"></i>Skills</span>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addSkillModal">
+                    <i class="fas fa-plus"></i> Add Skill
+                </button>
             </div>
             <div class="card-body">
                 {% for skill in skills %}
-                    <div class="small mb-1">
-                        {% if skill.is_checked %}
-                            <i class="fas fa-check-circle text-success me-1"></i>
-                        {% else %}
-                            <i class="far fa-circle text-muted me-1"></i>
-                        {% endif %}
-                        {{ skill.name }}
+                    <div class="small mb-1 d-flex justify-content-between align-items-center">
+                        <span>
+                            {% if skill.is_checked %}
+                                <i class="fas fa-check-circle text-success me-1"></i>
+                            {% else %}
+                                <i class="far fa-circle text-muted me-1"></i>
+                            {% endif %}
+                            {{ skill.name }}
+                        </span>
+                        <div class="btn-group" role="group">
+                            {% if not skill.is_checked %}
+                                <button class="btn btn-xs btn-outline-success" onclick="toggleSkill({{ skill.id }})" title="Check skill">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-xs btn-outline-danger" onclick="removeSkill({{ skill.id }})" title="Remove skill">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
+                {% empty %}
+                    <div class="small text-muted fst-italic">No skills yet</div>
                 {% endfor %}
             </div>
         </div>
-        {% endif %}
         
         <!-- Active Resources -->
-        {% if resources %}
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-treasure-chest me-2"></i>Resources
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-treasure-chest me-2"></i>Resources</span>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                    <i class="fas fa-plus"></i> Add Resource
+                </button>
             </div>
             <div class="card-body">
                 {% for resource in resources %}
-                    <div class="small mb-1">
-                        <i class="fas fa-gem text-warning me-1"></i>
-                        {{ resource.name }}
-                        {% if resource.is_stationary %}
-                            <i class="fas fa-home text-info ms-1"></i>
-                        {% endif %}
+                    <div class="small mb-1 d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="fas fa-gem text-warning me-1"></i>
+                            {{ resource.name }}
+                            {% if resource.is_stationary %}
+                                <i class="fas fa-home text-info ms-1" title="Stationary"></i>
+                            {% endif %}
+                        </span>
+                        <button class="btn btn-xs btn-outline-danger" onclick="removeResource({{ resource.id }})" title="Remove resource">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
+                {% empty %}
+                    <div class="small text-muted fst-italic">No resources yet</div>
                 {% endfor %}
             </div>
         </div>
-        {% endif %}
         
         <!-- Characters -->
-        {% if characters %}
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-users me-2"></i>Characters
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-users me-2"></i>Characters</span>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCharacterModal">
+                    <i class="fas fa-plus"></i> Add Character
+                </button>
             </div>
             <div class="card-body">
                 {% for char in characters %}
-                    <div class="small mb-1">
-                        {% if char.character_type == 'mortal' %}
-                            <i class="fas fa-user text-primary me-1"></i>
-                        {% else %}
-                            <i class="fas fa-ghost text-purple me-1"></i>
-                        {% endif %}
-                        <strong>{{ char.name }}</strong>
-                        <div class="text-muted">{{ char.description|truncatewords:8 }}</div>
+                    <div class="small mb-2 d-flex justify-content-between align-items-start">
+                        <div>
+                            {% if char.character_type == 'mortal' %}
+                                <i class="fas fa-user text-primary me-1"></i>
+                            {% else %}
+                                <i class="fas fa-ghost text-purple me-1"></i>
+                            {% endif %}
+                            <strong>{{ char.name }}</strong>
+                            <span class="badge bg-secondary ms-1">{{ char.get_relationship_display }}</span>
+                            <div class="text-muted mt-1">{{ char.description|truncatewords:12 }}</div>
+                        </div>
+                        <button class="btn btn-xs btn-outline-danger" onclick="removeCharacter({{ char.id }})" title="Remove character">
+                            <i class="fas fa-skull"></i>
+                        </button>
                     </div>
+                {% empty %}
+                    <div class="small text-muted fst-italic">No characters yet</div>
                 {% endfor %}
             </div>
         </div>
-        {% endif %}
+
+        <!-- Marks -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-scar me-2"></i>Marks</span>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addMarkModal">
+                    <i class="fas fa-plus"></i> Add Mark
+                </button>
+            </div>
+            <div class="card-body">
+                {% for mark in marks %}
+                    <div class="small mb-2 d-flex justify-content-between align-items-start">
+                        <div>
+                            <i class="fas fa-scar text-danger me-1"></i>
+                            <strong>{{ mark.description|truncatewords:8 }}</strong>
+                            {% if mark.how_concealed %}
+                                <div class="text-muted mt-1">
+                                    <small><i class="fas fa-eye-slash me-1"></i>{{ mark.how_concealed|truncatewords:10 }}</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button class="btn btn-xs btn-outline-danger" onclick="removeMark({{ mark.id }})" title="Remove mark">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                    </div>
+                {% empty %}
+                    <div class="small text-muted fst-italic">No marks yet</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Character Management Modals -->
+<div class="modal fade" id="addExperienceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Experience to Memory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addExperienceForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Memory Slot</label>
+                        <select name="memory_id" class="form-select" required>
+                            {% for memory in memories %}
+                                {% if memory.experiences.count < 3 %}
+                                    <option value="{{ memory.id }}">Memory {{ memory.order }} ({{ memory.experiences.count }}/3){% if memory.title %} - {{ memory.title }}{% endif %}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Experience Text</label>
+                        <textarea name="text" class="form-control" rows="4" required 
+                                  placeholder="Describe what happened and why it's significant..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Experience</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Skill Modal -->
+<div class="modal fade" id="addSkillModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Skill</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addSkillForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Skill Name</label>
+                        <input type="text" name="name" class="form-control" required 
+                               placeholder="e.g., Swordsmanship, Persuasion, Medicine">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea name="description" class="form-control" rows="3" 
+                                  placeholder="Describe what this skill represents or how you acquired it..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Skill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Resource Modal -->
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Resource</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addResourceForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Resource Name</label>
+                        <input type="text" name="name" class="form-control" required 
+                               placeholder="e.g., Castle, Gold, Library, Ship">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea name="description" class="form-control" rows="3" 
+                                  placeholder="Describe this resource and its significance..."></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="is_stationary" class="form-check-input" id="stationaryCheck">
+                        <label class="form-check-label" for="stationaryCheck">
+                            Stationary Resource (cannot be moved)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Resource</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Character Modal -->
+<div class="modal fade" id="addCharacterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Character</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCharacterForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Character Name</label>
+                        <input type="text" name="name" class="form-control" required 
+                               placeholder="e.g., Lord Ashton, Maria the Baker">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3" required
+                                  placeholder="Describe this character and their role in your story..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Character Type</label>
+                        <select name="character_type" class="form-select">
+                            <option value="mortal">Mortal</option>
+                            <option value="immortal">Immortal</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Relationship</label>
+                        <select name="relationship" class="form-select">
+                            <option value="neutral">Neutral</option>
+                            <option value="ally">Ally</option>
+                            <option value="enemy">Enemy</option>
+                            <option value="master">Master</option>
+                            <option value="servant">Servant</option>
+                            <option value="lover">Lover</option>
+                            <option value="family">Family</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Character</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Mark Modal -->
+<div class="modal fade" id="addMarkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Mark</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addMarkForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Mark Description</label>
+                        <textarea name="description" class="form-control" rows="3" required
+                                  placeholder="Describe the mark (scar, tattoo, missing limb, etc.)..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">How Concealed (Optional)</label>
+                        <textarea name="how_concealed" class="form-control" rows="2" 
+                                  placeholder="How do you hide or conceal this mark?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Mark</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -249,6 +548,206 @@ if (localStorage.getItem('tyov_tips_shown_{{ character.id }}') !== 'true') {
     const tipsModal = new bootstrap.Modal(document.getElementById('gameTipsModal'));
     tipsModal.show();
     localStorage.setItem('tyov_tips_shown_{{ character.id }}', 'true');
+}
+
+// Character management functions
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// Add Experience
+document.getElementById('addExperienceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    console.log('Add experience form submitted');
+    const formData = new FormData(this);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    console.log('Form data:', {
+        memory_id: formData.get('memory_id'),
+        text: formData.get('text'),
+        csrf: formData.get('csrfmiddlewaretoken')
+    });
+    
+    fetch('{% url "add_experience" character.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addExperienceModal')).hide();
+            location.reload(); // Refresh to show the new experience
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error details:', error);
+        alert('Network error: ' + error.message + '. Please check if the server is running and try again.');
+    });
+});
+
+// Add Skill
+document.getElementById('addSkillForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    console.log('Add skill form submitted');
+    const formData = new FormData(this);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    console.log('Skill form data:', {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        csrf: formData.get('csrfmiddlewaretoken')
+    });
+    
+    fetch('{% url "add_skill" character.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Skill response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Skill response data:', data);
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addSkillModal')).hide();
+            location.reload(); // Refresh to show the new skill
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Skill error details:', error);
+        alert('Network error: ' + error.message + '. Please check if the server is running and try again.');
+    });
+});
+
+// Add Resource
+document.getElementById('addResourceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch('{% url "add_resource" character.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addResourceModal')).hide();
+            location.reload(); // Refresh to show the new resource
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding the resource.');
+    });
+});
+
+// Add Character
+document.getElementById('addCharacterForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch('{% url "add_character" character.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addCharacterModal')).hide();
+            location.reload(); // Refresh to show the new character
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding the character.');
+    });
+});
+
+// Add Mark
+document.getElementById('addMarkForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch('{% url "add_mark" character.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addMarkModal')).hide();
+            location.reload(); // Refresh to show the new mark
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding the mark.');
+    });
+});
+
+// Toggle skill checked status
+function toggleSkill(skillId) {
+    fetch(`{% url 'toggle_skill' character.id 0 %}`.replace('0', skillId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+// Remove skill (mark as lost)
+function removeSkill(skillId) {
+    if (confirm('Remove this skill? This action cannot be undone.')) {
+        // We'll need to create an endpoint for this
+        alert('Remove skill functionality needs to be implemented');
+    }
+}
+
+// Remove resource (mark as lost)
+function removeResource(resourceId) {
+    if (confirm('Remove this resource? This action cannot be undone.')) {
+        alert('Remove resource functionality needs to be implemented');
+    }
+}
+
+// Remove character (mark as dead)
+function removeCharacter(charId) {
+    if (confirm('Kill this character? This action cannot be undone.')) {
+        alert('Remove character functionality needs to be implemented');
+    }
+}
+
+// Remove mark (mark as removed)
+function removeMark(markId) {
+    if (confirm('Remove this mark? This action cannot be undone.')) {
+        alert('Remove mark functionality needs to be implemented');
+    }
 }
 </script>
 {% endblock %}

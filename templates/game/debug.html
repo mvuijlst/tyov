@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Debug AJAX{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>AJAX Debug Test</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5>Test AJAX Functionality</h5>
+            <form id="debugForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Test Data</label>
+                    <input type="text" name="test_data" class="form-control" value="Hello AJAX">
+                </div>
+                <button type="submit" class="btn btn-primary">Test AJAX</button>
+            </form>
+            
+            <div id="result" class="mt-3"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+document.getElementById('debugForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    console.log('Debug form submitted');
+    
+    const formData = new FormData(this);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    console.log('Debug form data:', {
+        test_data: formData.get('test_data'),
+        csrf: formData.get('csrfmiddlewaretoken')
+    });
+    
+    fetch('{% url "debug_ajax" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Debug response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Debug response data:', data);
+        document.getElementById('result').innerHTML = `
+            <div class="alert alert-success">
+                <h6>Success!</h6>
+                <p>Message: ${data.message}</p>
+                <p>Method: ${data.method}</p>
+                <p>Data: ${JSON.stringify(data.data)}</p>
+            </div>
+        `;
+    })
+    .catch(error => {
+        console.error('Debug error:', error);
+        document.getElementById('result').innerHTML = `
+            <div class="alert alert-danger">
+                <h6>Error!</h6>
+                <p>${error.message}</p>
+            </div>
+        `;
+    });
+});
+</script>
+{% endblock %}

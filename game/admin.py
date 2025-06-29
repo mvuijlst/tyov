@@ -86,11 +86,59 @@ class GameSessionAdmin(admin.ModelAdmin):
 
 @admin.register(Prompt)
 class PromptAdmin(admin.ModelAdmin):
-    list_display = ['number', 'entry', 'text_preview']
+    list_display = ['prompt_id', 'text_preview', 'action_count', 'has_actions']
     list_filter = ['number', 'entry']
     ordering = ['number', 'entry']
-    search_fields = ['text']
+    search_fields = ['text', 'number']
+    readonly_fields = ['prompt_id', 'action_preview']
+    
+    def prompt_id(self, obj):
+        return f"{obj.number}{obj.entry}"
+    prompt_id.short_description = 'Prompt ID'
+    prompt_id.admin_order_field = 'number'
     
     def text_preview(self, obj):
         return obj.text[:100] + "..." if len(obj.text) > 100 else obj.text
     text_preview.short_description = 'Text Preview'
+    
+    def action_count(self, obj):
+        return len(obj.actions) if obj.actions else 0
+    action_count.short_description = 'Actions'
+    
+    def has_actions(self, obj):
+        return bool(obj.actions and len(obj.actions) > 0)
+    has_actions.boolean = True
+    has_actions.short_description = 'Has Actions'
+    
+    def action_preview(self, obj):
+        if not obj.actions:
+            return "No actions defined"
+        
+        preview = []
+        for i, action in enumerate(obj.actions[:3], 1):  # Show first 3 actions
+            action_type = action.get('type', 'unknown')
+            description = action.get('description', '')
+            preview.append(f"{i}. {action_type}: {description[:50]}")
+        
+        if len(obj.actions) > 3:
+            preview.append(f"... and {len(obj.actions) - 3} more")
+        
+        return "\n".join(preview)
+    action_preview.short_description = 'Action Preview'
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('number', 'entry', 'text')
+        }),
+        ('Actions', {
+            'fields': ('actions', 'action_preview'),
+            'description': 'JSON array of mechanical actions required for this prompt. '
+                          'Use the format: [{"type": "action_type", "description": "description", ...}]'
+        })
+    )
+    
+    class Media:
+        css = {
+            'all': ('admin/css/prompt_admin.css',)
+        }
+        js = ('admin/js/prompt_admin.js',)

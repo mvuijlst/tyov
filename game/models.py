@@ -149,6 +149,11 @@ class Prompt(models.Model):
     number = models.IntegerField()
     entry = models.CharField(max_length=1)  # a, b, or c
     text = models.TextField()
+    actions = models.JSONField(
+        default=list, 
+        blank=True,
+        help_text="JSON array of required mechanical actions for this prompt"
+    )
     
     class Meta:
         unique_together = ['number', 'entry']
@@ -156,3 +161,12 @@ class Prompt(models.Model):
     
     def __str__(self):
         return f"Prompt {self.number}{self.entry}"
+    
+    def get_actions(self):
+        """Return the actions as a Python list."""
+        return self.actions if self.actions else []
+    
+    @property
+    def has_actions(self):
+        """Return True if this prompt has any actions defined."""
+        return bool(self.actions and len(self.actions) > 0)

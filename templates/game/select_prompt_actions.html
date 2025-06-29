@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+
+{% block title %}Select Actions - {{ character.name }} - Thousand Year Old Vampire{% endblock %}
+
+{% block extra_css %}
+<style>
+    .action-card {
+        border: 2px solid var(--gold);
+        background: var(--parchment);
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .action-header {
+        background: var(--dark-brown);
+        color: var(--gold);
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+        font-weight: bold;
+    }
+    
+    .action-body {
+        padding: 20px;
+    }
+    
+    .choice-option {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .choice-option:hover {
+        background: rgba(212, 175, 55, 0.1);
+    }
+    
+    .choice-option.selected {
+        background: rgba(212, 175, 55, 0.2);
+        border-color: var(--gold);
+    }
+    
+    .character-option, .skill-option, .resource-option, .mark-option, .memory-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        margin: 5px 0;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    
+    .character-option input, .skill-option input, .resource-option input, .mark-option input, .memory-option input {
+        margin-right: 10px;
+    }
+    
+    .create-new-form {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    
+    .prompt-reminder {
+        background: rgba(139, 69, 19, 0.1);
+        border-left: 4px solid var(--blood-red);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 0 5px 5px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="vampire-title mb-4">
+                <i class="fas fa-hand-point-right me-2"></i>Choose Your Actions
+            </h1>
+            
+            <div class="prompt-reminder">
+                <h5><i class="fas fa-scroll me-2"></i>Your Response</h5>
+                <p class="mb-0">"{{ pending_response|linebreaksbr }}"</p>
+            </div>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>The prompt requires specific actions.</strong> Choose how you want to fulfill each requirement:
+            </div>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% for action in pending_actions %}
+            <div class="action-card">
+                <div class="action-header">
+                    <i class="fas fa-{{ action.icon }} me-2"></i>{{ action.description }}
+                </div>
+                <div class="action-body">
+                    {% if action.type == 'kill_mortal' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        
+                        {% if mortal_characters %}
+                            <h6>Choose a mortal character to kill:</h6>
+                            {% for char in mortal_characters %}
+                                <div class="character-option">
+                                    <label class="form-check-label d-flex align-items-center">
+                                        <input type="radio" name="action_{{ forloop.parentloop.counter0 }}_character" 
+                                               value="{{ char.id }}" class="form-check-input me-2">
+                                        <div>
+                                            <strong>{{ char.name }}</strong>
+                                            <small class="text-muted d-block">{{ char.description }}</small>
+                                            <span class="badge badge-secondary">{{ char.get_relationship_display }}</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                            
+                            <div class="mt-3">
+                                <label class="form-check-label d-flex align-items-center">
+                                    <input type="radio" name="action_{{ forloop.counter0 }}_create_new" 
+                                           value="1" class="form-check-input me-2">
+                                    <strong>Create a new mortal to kill instead</strong>
+                                </label>
+                                <div class="create-new-form" style="display: none;" id="create_new_{{ forloop.counter0 }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Name:</label>
+                                            <input type="text" name="action_{{ forloop.counter0 }}_new_name" 
+                                                   class="form-control" placeholder="Close Friend">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Description:</label>
+                                            <input type="text" name="action_{{ forloop.counter0 }}_new_description" 
+                                                   class="form-control" placeholder="Someone you cared about">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You have no living mortal characters. A new one will be created and killed.
+                            </div>
+                            <input type="hidden" name="action_{{ forloop.counter0 }}_create_new" value="1">
+                            <div class="create-new-form">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Name:</label>
+                                        <input type="text" name="action_{{ forloop.counter0 }}_new_name" 
+                                               class="form-control" placeholder="Close Friend" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Description:</label>
+                                        <input type="text" name="action_{{ forloop.counter0 }}_new_description" 
+                                               class="form-control" placeholder="Someone you cared about" required>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                    {% elif action.type == 'create_mortal' or action.type == 'create_immortal' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Name:</label>
+                                <input type="text" name="action_{{ forloop.counter0 }}_name" 
+                                       class="form-control" placeholder="Character Name" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Description:</label>
+                                <input type="text" name="action_{{ forloop.counter0 }}_description" 
+                                       class="form-control" placeholder="Brief description" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Relationship:</label>
+                                <select name="action_{{ forloop.counter0 }}_relationship" class="form-select">
+                                    <option value="neutral">Neutral</option>
+                                    <option value="friend">Friend</option>
+                                    <option value="enemy">Enemy</option>
+                                    <option value="lover">Lover</option>
+                                    <option value="family">Family</option>
+                                    <option value="servant">Servant</option>
+                                    <option value="master">Master</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                    {% elif action.type == 'convert_mortal' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        {% if mortal_characters %}
+                            <h6>Choose a mortal character to convert:</h6>
+                            {% for char in mortal_characters %}
+                                <div class="character-option">
+                                    <label class="form-check-label d-flex align-items-center">
+                                        <input type="radio" name="action_{{ forloop.parentloop.counter0 }}_character" 
+                                               value="{{ char.id }}" class="form-check-input me-2">
+                                        <div>
+                                            <strong>{{ char.name }}</strong>
+                                            <small class="text-muted d-block">{{ char.description }}</small>
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                You have no living mortal characters to convert!
+                            </div>
+                        {% endif %}
+                        
+                    {% elif action.type == 'check_skills' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        {% if unchecked_skills %}
+                            <h6>Choose {{ action.count }} skill{{ action.count|pluralize }} to check:</h6>
+                            {% for skill in unchecked_skills %}
+                                <div class="skill-option">
+                                    <label class="form-check-label d-flex align-items-center">
+                                        <input type="checkbox" name="action_{{ forloop.parentloop.counter0 }}_skills" 
+                                               value="{{ skill.id }}" class="form-check-input me-2" 
+                                               data-max="{{ action.count }}">
+                                        <div>
+                                            <strong>{{ skill.name }}</strong>
+                                            {% if skill.description %}
+                                                <small class="text-muted d-block">{{ skill.description }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                You have no unchecked skills to check!
+                            </div>
+                        {% endif %}
+                        
+                    {% elif action.type == 'lose_skill' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        {% if available_skills %}
+                            <h6>Choose a skill to lose:</h6>
+                            {% for skill in available_skills %}
+                                <div class="skill-option">
+                                    <label class="form-check-label d-flex align-items-center">
+                                        <input type="radio" name="action_{{ forloop.parentloop.counter0 }}_skill" 
+                                               value="{{ skill.id }}" class="form-check-input me-2">
+                                        <div>
+                                            <strong>{{ skill.name }}</strong>
+                                            {% if skill.is_checked %}<span class="badge bg-success ms-2">Checked</span>{% endif %}
+                                            {% if skill.description %}
+                                                <small class="text-muted d-block">{{ skill.description }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                You have no skills to lose!
+                            </div>
+                        {% endif %}
+                        
+                    {% elif action.type == 'create_skill' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Skill Name:</label>
+                                <input type="text" name="action_{{ forloop.counter0 }}_name" 
+                                       class="form-control" placeholder="Skill Name" required>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Description:</label>
+                                <input type="text" name="action_{{ forloop.counter0 }}_description" 
+                                       class="form-control" placeholder="How does this skill help you?" required>
+                            </div>
+                        </div>
+                        
+                    {% elif action.type == 'create_resource' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Name:</label>
+                                <input type="text" name="action_{{ forloop.counter0 }}_name" 
+                                       class="form-control" placeholder="Resource Name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Description:</label>
+                                <input type="text" name="action_{{ forloop.counter0 }}_description" 
+                                       class="form-control" placeholder="Brief description">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Stationary?</label>
+                                <div class="form-check">
+                                    <input type="checkbox" name="action_{{ forloop.counter0 }}_stationary" 
+                                           class="form-check-input">
+                                    <label class="form-check-label">Yes</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    {% elif action.type == 'lose_resources' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        {% if available_resources %}
+                            <h6>Choose {{ action.count }} resource{{ action.count|pluralize }} to lose:</h6>
+                            {% for resource in available_resources %}
+                                <div class="resource-option">
+                                    <label class="form-check-label d-flex align-items-center">
+                                        <input type="checkbox" name="action_{{ forloop.parentloop.counter0 }}_resources" 
+                                               value="{{ resource.id }}" class="form-check-input me-2" 
+                                               data-max="{{ action.count }}">
+                                        <div>
+                                            <strong>{{ resource.name }}</strong>
+                                            {% if resource.is_stationary %}<span class="badge bg-info ms-2">Stationary</span>{% endif %}
+                                            {% if resource.description %}
+                                                <small class="text-muted d-block">{{ resource.description }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                You have no resources to lose!
+                            </div>
+                        {% endif %}
+                        
+                    {% elif action.type == 'create_mark' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Mark Description:</label>
+                                <textarea name="action_{{ forloop.counter0 }}_description" 
+                                          class="form-control" rows="3" 
+                                          placeholder="Describe the vampiric mark..." required></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">How Concealed:</label>
+                                <textarea name="action_{{ forloop.counter0 }}_concealed" 
+                                          class="form-control" rows="3" 
+                                          placeholder="How do you hide this mark from mortals?"></textarea>
+                            </div>
+                        </div>
+                        
+                    {% elif action.type == 'remove_mark' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        {% if available_marks %}
+                            <h6>Choose a mark to remove:</h6>
+                            {% for mark in available_marks %}
+                                <div class="mark-option">
+                                    <label class="form-check-label d-flex align-items-center">
+                                        <input type="radio" name="action_{{ forloop.parentloop.counter0 }}_mark" 
+                                               value="{{ mark.id }}" class="form-check-input me-2">
+                                        <div>
+                                            <strong>{{ mark.description|truncatewords:10 }}</strong>
+                                            {% if mark.how_concealed %}
+                                                <small class="text-muted d-block">Concealed: {{ mark.how_concealed|truncatewords:10 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                You have no marks to remove!
+                            </div>
+                        {% endif %}
+                        
+                    {% elif action.type == 'lose_memory' %}
+                        <p class="text-muted mb-3">{{ action.details }}</p>
+                        {% if available_memories %}
+                            <h6>Choose a memory to lose:</h6>
+                            {% for memory in available_memories %}
+                                <div class="memory-option">
+                                    <label class="form-check-label d-flex align-items-center">
+                                        <input type="radio" name="action_{{ forloop.parentloop.counter0 }}_memory" 
+                                               value="{{ memory.id }}" class="form-check-input me-2">
+                                        <div>
+                                            <strong>Memory {{ memory.order }}</strong>
+                                            {% if memory.title %}
+                                                <span class="text-muted">- {{ memory.title }}</span>
+                                            {% endif %}
+                                            <small class="text-muted d-block">
+                                                {{ memory.experiences.count }}/3 experiences
+                                            </small>
+                                            {% for exp in memory.experiences.all %}
+                                                <small class="text-muted d-block">
+                                                    "{{ exp.text|truncatewords:15 }}"
+                                                </small>
+                                            {% endfor %}
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                You have no memories to lose!
+                            </div>
+                        {% endif %}
+                        
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No manual actions required. The prompt will be processed automatically.
+            </div>
+        {% endfor %}
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'play_game' character.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-check me-2"></i>Confirm Actions & Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Handle radio button for create new character
+document.querySelectorAll('input[name*="_create_new"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const actionIndex = this.name.match(/action_(\d+)_create_new/)[1];
+        const createForm = document.getElementById(`create_new_${actionIndex}`);
+        if (createForm) {
+            createForm.style.display = this.checked ? 'block' : 'none';
+        }
+    });
+});
+
+// Handle checkbox limits for skills and resources
+document.querySelectorAll('input[type="checkbox"][data-max]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const name = this.name;
+        const max = parseInt(this.dataset.max);
+        const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
+        const checked = document.querySelectorAll(`input[name="${name}"]:checked`);
+        
+        if (checked.length >= max) {
+            checkboxes.forEach(cb => {
+                if (!cb.checked) cb.disabled = true;
+            });
+        } else {
+            checkboxes.forEach(cb => cb.disabled = false);
+        }
+    });
+});
+</script>
+{% endblock %}

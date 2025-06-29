@@ -4,7 +4,7 @@
         {
             "label": "Run Django Development Server",
             "type": "shell",
-            "command": "C:/dev/tyov/.venv/Scripts/python.exe",
+            "command": "python",
             "args": [
                 "manage.py",
                 "runserver"
